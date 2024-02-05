@@ -1,0 +1,91 @@
+pip install plotly
+pip install pandas plotly
+
+# Print column names (열 이름 출력)
+print(df.columns)
+
+import pandas as pd
+
+# Paste the path to your uploaded file here (업로드된 파일 경로를 여기에 붙여넣으세요)
+file_path = '/content/abcd.xlsx'  # Example path (예시 경로)
+
+# Load data and print first 5 rows (데이터 로드 및 첫 5개 행 출력)
+df = pd.read_excel(file_path, header=[0, 1])  # Considering multi-level headers (멀티레벨 헤더를 고려)
+print(df.head())
+
+import pandas as pd
+import plotly.graph_objects as go
+import random
+
+# Load dataframe (데이터 프레임 로드)
+file_path = '/content/abcd.xlsx'
+df = pd.read_excel(file_path)
+
+# ... (definition of split_column function (split_column 함수 정의))
+
+# Split each column and reassemble into a new dataframe (각 열을 분리하고 새로운 데이터프레임으로 재구성)
+df = split_column(df, 'A1')  
+df = split_column(df, 'B2')  
+df = split_column(df, 'C3')  
+df = split_column(df, 'D4')  
+
+# Extract unique values from each column as a list (데이터 프레임의 각 열에 대해 고유한 값을 리스트로 추출)
+subjects = df['A1'].dropna().unique().tolist()  # 'A1' originally
+methods = df['B2'].dropna().unique().tolist()  # 'B2' originally
+teacher_supports = df['C3'].dropna().unique().tolist()  # 'C3' originally
+student_supports = df['D4'].dropna().unique().tolist()  # 'D4' originally
+
+# Create node label and index mapping (노드 라벨과 인덱스 매핑 생성)
+node_labels = subjects + methods + teacher_supports + student_supports
+node_index = {node: idx for idx, node in enumerate(node_labels)}
+
+# Assign random colors to each node (각 노드에 랜덤 색상을 지정합니다.)
+node_colors = ['#' + ''.join([random.choice('0123456789ABCDEF') for j in range(6)])
+               for i in range(len(node_labels))]
+
+# Prepare Sankey diagram data (생키 다이어그램 데이터 준비)
+sankey_sources = []
+sankey_targets = []
+sankey_values = []
+
+# Flow from 'A1' to 'B2' (A1에서 B2로의 흐름)
+for _, row in df.iterrows():
+    if pd.notna(row['A1']) and pd.notna(row['B2']):
+        sankey_sources.append(node_index[row['A1']])
+        sankey_targets.append(node_index[row['B2']])
+        sankey_values.append(1)
+
+# Flow from 'B2' to 'C3' (B2에서 C3로의 흐름)
+for _, row in df.iterrows():
+    if pd.notna(row['B2']):
+        if pd.notna(row['C3']):
+            sankey_sources.append(node_index[row['B2']])
+            sankey_targets.append(node_index[row['C3']])
+            sankey_values.append(1)
+
+# Flow from 'B2' to 'D4' (B2에서 D4로의 흐름)
+for _, row in df.iterrows():
+    if pd.notna(row['B2']):
+        if pd.notna(row['D4']):
+            sankey_sources.append(node_index[row['B2']])
+            sankey_targets.append(node_index[row['D4']]);
+            sankey_values.append(1)
+
+# Create Sankey diagram (생키 다이어그램 생성)
+fig = go.Figure(data=[go.Sankey(
+    node=dict(
+        pad=15,
+        thickness=20,
+        line=dict(color="gray", width=0.5),
+        label=node_labels,
+        #color=node_colors  # Set the color of the nodes (노드의 색상을 설정합니다.)
+    ),
+    link=dict(
+        source=sankey_sources,
+        target=sankey_targets,
+        value=sankey_values,
+        #color=[node_colors[src] for src in sankey_sources]  # Set the color of each link to the node's color (각 링크의 색상을 노드의 색상으로 설정합니다.)
+    ))])
+
+fig.update_layout(title_text="Sankey Diagram: A1 - B2 - C3 - D4", font_size=10)
+fig.show()
